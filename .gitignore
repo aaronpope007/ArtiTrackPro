@@ -1,0 +1,4 @@
+# Node modules (ignore in all packages/apps)
+**/node_modules/
+
+
