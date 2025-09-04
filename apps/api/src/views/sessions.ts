@@ -1,28 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
+import { TherapySessionSchema, type TherapySessionInput } from '@artitrack/shared';
 import { requireAuth, requireRole } from '../middleware/auth';
 
 export const router = Router();
 
-const targetSoundPerformanceSchema = z.object({
-  phoneme: z.string(),
-  wordPosition: z.enum(['initial', 'medial', 'final']),
-  correct: z.number().min(0),
-  incorrect: z.number().min(0),
-  stimulability: z.boolean().optional(),
-  cuingLevel: z.enum(['independent', 'verbal', 'visual', 'tactile']).optional()
-});
-
-const therapySessionSchema = z.object({
-  clientId: z.string(),
-  sessionDate: z.string(),
-  duration: z.number().min(1),
-  targetSoundData: z.array(targetSoundPerformanceSchema),
-  clinicalNotes: z.string().optional(),
-  cuingLevel: z.enum(['independent', 'verbal', 'visual', 'tactile']).optional()
-});
-
-type TherapySession = z.infer<typeof therapySessionSchema> & { id: string; overallAccuracy: number };
+type TherapySession = z.infer<typeof TherapySessionSchema> & { id: string; overallAccuracy: number };
 
 const sessions = new Map<string, TherapySession>();
 
@@ -33,7 +17,7 @@ router.get('/', requireRole(['admin', 'slp', 'staff']), (_req, res) => {
 });
 
 router.post('/', requireRole(['admin', 'slp']), (req, res) => {
-  const parsed = therapySessionSchema.safeParse(req.body);
+  const parsed = TherapySessionSchema.safeParse(req.body as TherapySessionInput);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid session data' });
 
   const totals = parsed.data.targetSoundData.reduce(
@@ -48,7 +32,7 @@ router.post('/', requireRole(['admin', 'slp']), (req, res) => {
     ? Math.round((totals.correct / (totals.correct + totals.incorrect)) * 100)
     : 0;
 
-  const id = crypto.randomUUID();
+  const id = randomUUID();
   const session: TherapySession = { id, overallAccuracy, ...parsed.data };
   sessions.set(id, session);
   res.status(201).json(session);

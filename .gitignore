@@ -1,4 +1,8 @@
 # Node modules (ignore in all packages/apps)
 **/node_modules/
-
-
+**/dist/
+**/coverage/
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local

@@ -1,43 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
+import { ClientSchema, type Client as SharedClient, type ClientInput } from '@artitrack/shared';
 import { requireAuth, requireRole } from '../middleware/auth';
 
 export const router = Router();
 
-const contactInfoSchema = z.object({
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  address: z.string().optional()
-});
-
-const goalSchema = z.object({
-  id: z.string().optional(),
-  description: z.string(),
-  targetAccuracy: z.number().min(0).max(100),
-  consecutiveSessions: z.number().min(1).max(10)
-});
-
-const targetSoundSchema = z.object({
-  phoneme: z.string(),
-  wordPosition: z.enum(['initial', 'medial', 'final']),
-  wordList: z.array(z.string()),
-  baselineAccuracy: z.number().min(0).max(100),
-  targetAccuracy: z.number().min(0).max(100),
-  currentAccuracy: z.number().min(0).max(100).default(0)
-});
-
-const clientSchema = z.object({
-  firstName: z.string(),
-  lastName: z.string(),
-  dateOfBirth: z.string(),
-  parentGuardian: z.string(),
-  contactInfo: contactInfoSchema,
-  targetSounds: z.array(targetSoundSchema),
-  treatmentGoals: z.array(goalSchema),
-  consentOnFile: z.boolean().default(false)
-});
-
-type Client = z.infer<typeof clientSchema> & { id: string; createdDate: string; lastModified: string };
+type Client = SharedClient;
 
 const clients = new Map<string, Client>();
 
@@ -48,13 +17,13 @@ router.get('/', requireRole(['admin', 'slp', 'staff']), (_req, res) => {
 });
 
 router.post('/', requireRole(['admin', 'slp']), (req, res) => {
-  const parsed = clientSchema.safeParse(req.body);
+  const parsed = ClientSchema.safeParse(req.body as ClientInput);
   if (!parsed.success) {
     return res.status(400).json({ error: 'Invalid client data' });
   }
-  const id = crypto.randomUUID();
+  const id = randomUUID();
   const now = new Date().toISOString();
-  const client: Client = { id, createdDate: now, lastModified: now, ...parsed.data };
+  const client: Client = { id, createdDate: now, lastModified: now, ...parsed.data } as Client;
   clients.set(id, client);
   res.status(201).json(client);
 });
@@ -68,7 +37,7 @@ router.get('/:id', requireRole(['admin', 'slp', 'staff']), (req, res) => {
 router.put('/:id', requireRole(['admin', 'slp']), (req, res) => {
   const existing = clients.get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
-  const parsed = clientSchema.safeParse(req.body);
+  const parsed = ClientSchema.safeParse(req.body as ClientInput);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid client data' });
   const updated: Client = {
     ...existing,
