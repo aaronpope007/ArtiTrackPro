@@ -9,6 +9,9 @@ import Session from './pages/Session';
 import ClientNew from './pages/ClientNew';
 import Dashboard from './pages/Dashboard';
 import Reports from './pages/Reports';
+import Articulation from './pages/Articulation';
+import YesNoQuestions from './pages/YesNoQuestions';
+import WhoQuestions from './pages/WhoQuestions';
 
 function AppShell() {
   const { token, logout } = useAuth();
@@ -41,6 +44,9 @@ function AppShell() {
           <Route path="/clients/:id" element={token ? <ClientDetail /> : <Navigate to="/login" replace />} />
           <Route path="/session/:clientId" element={token ? <Session /> : <Navigate to="/login" replace />} />
           <Route path="/reports" element={token ? <Reports /> : <Navigate to="/login" replace />} />
+          <Route path="/articulation" element={token ? <Articulation /> : <Navigate to="/login" replace />} />
+          <Route path="/yes-no-questions" element={token ? <YesNoQuestions /> : <Navigate to="/login" replace />} />
+          <Route path="/who-questions" element={token ? <WhoQuestions /> : <Navigate to="/login" replace />} />
         </Routes>
       </Container>
     </Box>
